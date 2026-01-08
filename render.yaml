@@ -1,0 +1,66 @@
+# Render Blueprint for Trainer3 Platform
+# This file defines the infrastructure for automatic deployment
+
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: trainer3-db
+    env: docker
+    plan: free
+    dockerfilePath: ./packages/backend/Dockerfile.db
+    envVars:
+      - key: POSTGRES_USER
+        value: trainer3
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: trainer3
+
+  # Backend API Service
+  - type: web
+    name: trainer3-backend
+    env: docker
+    plan: free
+    dockerfilePath: ./packages/backend/Dockerfile.prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trainer3-db
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false  # Must be set manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: trainer3-frontend
+          property: host
+      - key: BACKEND_PORT
+        value: 3000
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # Frontend Web App
+  - type: web
+    name: trainer3-frontend
+    env: docker
+    plan: free
+    dockerfilePath: ./packages/frontend/Dockerfile.prod
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: trainer3-backend
+          property: host
+    autoDeploy: true
+
+databases:
+  - name: trainer3-db
+    databaseName: trainer3
+    user: trainer3
+    plan: free

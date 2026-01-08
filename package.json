@@ -1,0 +1,23 @@
+{
+  "name": "trainer3",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Personal Trainer Platform",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @trainer3/backend\" \"npm run dev -w @trainer3/frontend\"",
+    "build": "npm run build -w @trainer3/shared && npm run build -w @trainer3/backend && npm run build -w @trainer3/frontend",
+    "db:migrate": "npm run db:migrate -w @trainer3/backend",
+    "db:studio": "npm run db:studio -w @trainer3/backend",
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: trainer3
+          POSTGRES_PASSWORD: trainer3
+          POSTGRES_DB: trainer3_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build shared package
+        run: npm run build -w @trainer3/shared
+
+      - name: Generate Prisma client
+        run: npm run db:generate -w @trainer3/backend
+        env:
+          DATABASE_URL: postgresql://trainer3:trainer3@localhost:5432/trainer3_test
+
+      - name: Run Prisma migrations
+        run: npm run db:push -w @trainer3/backend
+        env:
+          DATABASE_URL: postgresql://trainer3:trainer3@localhost:5432/trainer3_test
+
+      - name: Build backend
+        run: npm run build -w @trainer3/backend
+
+      - name: Build frontend
+        run: npm run build -w @trainer3/frontend
+        env:
+          VITE_API_URL: http://localhost:3000
+
+      - name: Check for TypeScript errors
+        run: |
+          cd packages/backend && npx tsc --noEmit
+          cd ../frontend && npx tsc --noEmit
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./packages/backend/Dockerfile
+          push: false
+          tags: trainer3-backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./packages/frontend/Dockerfile
+          push: false
+          tags: trainer3-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

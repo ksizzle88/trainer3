@@ -1,0 +1,29 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Render
+        run: |
+          echo "🚀 Deployment triggered!"
+          echo "Render will auto-deploy from main branch"
+          echo "Check status at: https://dashboard.render.com"
+
+      - name: Notify deployment
+        run: |
+          echo "✅ Deployment initiated for commit: ${{ github.sha }}"
+          echo "📦 Services deploying:"
+          echo "  - Database (PostgreSQL)"
+          echo "  - Backend API"
+          echo "  - Frontend Web App"
