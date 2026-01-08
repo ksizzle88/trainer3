@@ -89,6 +89,34 @@ npm run db:migrate
 2. Register a new account
 3. Start chatting with your AI trainer!
 
+## 🌐 Deploy to Production
+
+Deploy Trainer3 publicly with automatic CI/CD:
+
+### Quick Deploy to Render.com (Free)
+
+1. **Push to GitHub** (if not already)
+2. **Go to [Render.com](https://render.com)** and sign up
+3. **New → Blueprint** → Select your `trainer3` repo
+4. **Add Environment Variable**: `OPENAI_API_KEY=sk-proj-your-key`
+5. **Deploy!** Your app will be live at `https://trainer3-frontend.onrender.com`
+
+**Full deployment guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for:
+- CI/CD pipeline details
+- Alternative hosting (Railway, Fly.io, Heroku)
+- Custom domains
+- Scaling tips
+- Production checklist
+
+### Auto-Deploy on Merge to Main
+
+Every merge to `main` automatically:
+1. ✅ Runs CI tests (GitHub Actions)
+2. ✅ Builds Docker images
+3. ✅ Deploys to production
+4. ✅ Runs database migrations
+5. ✅ Zero-downtime deployment
+
 ## 🧑‍💻 Development
 
 ### Running Without Docker
