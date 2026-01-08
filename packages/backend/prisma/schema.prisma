@@ -1,0 +1,129 @@
+// Prisma schema for Trainer3
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Authentication & Users
+// ============================================================================
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String?
+  avatarUrl  String?  @map("avatar_url")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  weightEntries WeightEntry[]
+  approvals     Approval[]
+
+  @@map("users")
+}
+
+model Account {
+  id           String  @id @default(uuid())
+  userId       String  @map("user_id")
+  provider     String  // 'email' | 'google'
+  providerId   String? @map("provider_id") // Google ID, etc.
+  passwordHash String? @map("password_hash") // For email/password auth
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@map("accounts")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ============================================================================
+// Capabilities & Registry
+// ============================================================================
+
+model Capability {
+  id           String   @id @default(uuid())
+  capabilityId String   @map("capability_id")
+  version      String   @default("latest")
+  status       String   @default("published") // 'draft' | 'published' | 'deprecated'
+  definition   Json     // Full capability definition
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([capabilityId, version])
+  @@map("capabilities")
+}
+
+// ============================================================================
+// Domain: Weights
+// ============================================================================
+
+model WeightEntry {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  measuredAt  DateTime @map("measured_at")
+  weightLbs   Decimal  @map("weight_lbs") @db.Decimal(6, 2)
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, measuredAt])
+  @@index([userId, measuredAt])
+  @@map("weight_entries")
+}
+
+// ============================================================================
+// Audit & Approvals
+// ============================================================================
+
+model Approval {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  toolName       String   @map("tool_name")
+  toolArgs       Json     @map("tool_args")
+  status         String   @default("pending") // 'pending' | 'approved' | 'denied'
+  preview        Json?
+  approvedAt     DateTime? @map("approved_at")
+  approvedBy     String?   @map("approved_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("approvals")
+}
+
+// ============================================================================
+// Agent Conversations (optional for persistence)
+// ============================================================================
+
+model Conversation {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String?
+  messages  Json[]   @default([])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("conversations")
+}
