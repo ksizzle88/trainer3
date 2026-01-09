@@ -44,3 +44,4 @@ packages/backend/prisma/migrations/
 # Misc
 *.tsbuildinfo
 .turbo
+SETUP_SECRETS.md

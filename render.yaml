@@ -2,20 +2,6 @@
 # This file defines the infrastructure for automatic deployment
 
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: trainer3-db
-    env: docker
-    plan: free
-    dockerfilePath: ./packages/backend/Dockerfile.db
-    envVars:
-      - key: POSTGRES_USER
-        value: trainer3
-      - key: POSTGRES_PASSWORD
-        generateValue: true
-      - key: POSTGRES_DB
-        value: trainer3
-
   # Backend API Service
   - type: web
     name: trainer3-backend

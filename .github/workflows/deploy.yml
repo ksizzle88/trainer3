@@ -14,16 +14,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to Render
+      - name: Trigger Render Deployment
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID_BACKEND: ${{ secrets.RENDER_SERVICE_ID_BACKEND }}
+          RENDER_SERVICE_ID_FRONTEND: ${{ secrets.RENDER_SERVICE_ID_FRONTEND }}
         run: |
-          echo "🚀 Deployment triggered!"
-          echo "Render will auto-deploy from main branch"
-          echo "Check status at: https://dashboard.render.com"
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "⚠️  RENDER_API_KEY not set - relying on Render auto-deploy"
+            echo "🚀 Render will auto-deploy from main branch"
+            echo "Check status at: https://dashboard.render.com"
+          else
+            echo "🚀 Triggering manual deployment via Render API..."
 
-      - name: Notify deployment
+            # Deploy backend
+            if [ -n "$RENDER_SERVICE_ID_BACKEND" ]; then
+              curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID_BACKEND/deploys" \
+                -H "Authorization: Bearer $RENDER_API_KEY" \
+                -H "Content-Type: application/json"
+              echo "✅ Backend deployment triggered"
+            fi
+
+            # Deploy frontend
+            if [ -n "$RENDER_SERVICE_ID_FRONTEND" ]; then
+              curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID_FRONTEND/deploys" \
+                -H "Authorization: Bearer $RENDER_API_KEY" \
+                -H "Content-Type: application/json"
+              echo "✅ Frontend deployment triggered"
+            fi
+          fi
+
+      - name: Deployment Summary
         run: |
-          echo "✅ Deployment initiated for commit: ${{ github.sha }}"
-          echo "📦 Services deploying:"
+          echo "📦 Deployment Summary"
+          echo "===================="
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Services:"
           echo "  - Database (PostgreSQL)"
           echo "  - Backend API"
           echo "  - Frontend Web App"
+          echo ""
+          echo "Monitor deployment at: https://dashboard.render.com"
